@@ -75,11 +75,7 @@
         <h2 id="selectedDiscipline">Выбранная дисциплина</h2>
         <div id="topicMenu">
             <p>Выберите тему:</p>
-            <ul>
-                <li onclick="startTask('Легкий')">Тема 1 (Легкий)</li>
-                <li onclick="startTask('Средний')">Тема 2 (Средний)</li>
-                <li onclick="startTask('Сложный')">Тема 3 (Сложный)</li>
-            </ul>
+            <ul id="topicList"></ul>
         </div>
     </section>
 
@@ -88,15 +84,28 @@
         <h2>Задание</h2>
         <p id="taskDescription">Изучите материал и ответьте на вопрос:</p>
         <p id="taskMaterial">Материал: <i>Пример учебного материала для выбранного задания.</i></p>
-        <p>Вопрос: <b>Сколько будет 2 + 2?</b></p>
-        <button onclick="submitAnswer(true)">4</button>
-        <button onclick="submitAnswer(false)">5</button>
-        <button onclick="submitAnswer(false)">3</button>
+        <p>Вопрос: <b id="taskQuestion">Сколько будет 2 + 2?</b></p>
+        <div id="taskOptions"></div>
     </section>
 
     <script>
         const users = JSON.parse(localStorage.getItem('users')) || {};
         let currentUser = null;
+
+        const tasks = {
+            Математика: [
+                { material: "Числа и их свойства", question: "Чему равно 5 + 3?", options: ["6", "8", "9"], answer: "8" },
+                { material: "Умножение чисел", question: "Чему равно 6 × 7?", options: ["42", "36", "49"], answer: "42" }
+            ],
+            Физика: [
+                { material: "Закон Ньютона", question: "Как называется сила, с которой земля притягивает тело?", options: ["Гравитация", "Магнетизм", "Трение"], answer: "Гравитация" },
+                { material: "Энергия", question: "Единица измерения энергии?", options: ["Джоуль", "Ньютон", "Паскаль"], answer: "Джоуль" }
+            ],
+            Химия: [
+                { material: "Периодическая таблица", question: "Кто создал периодическую таблицу?", options: ["Менделеев", "Ньютон", "Эйнштейн"], answer: "Менделеев" },
+                { material: "Химические элементы", question: "Символ воды в химии?", options: ["H2O", "O2", "CO2"], answer: "H2O" }
+            ]
+        };
 
         function navigate(page) {
             document.querySelectorAll('section, header').forEach(sec => sec.style.display = 'none');
@@ -143,25 +152,36 @@
 
         function selectDiscipline(name) {
             document.getElementById('selectedDiscipline').textContent = name;
+            const topicList = document.getElementById('topicList');
+            topicList.innerHTML = '';
+            tasks[name].forEach((task, index) => {
+                const li = document.createElement('li');
+                li.textContent = `Тема ${index + 1}`;
+                li.onclick = () => startTask(name, index);
+                topicList.appendChild(li);
+            });
             navigate('topics');
         }
 
-        function startTask(difficulty) {
-            document.getElementById('taskDescription').textContent = `Вы выбрали задание уровня: ${difficulty}.`;
+        function startTask(discipline, index) {
+            const task = tasks[discipline][index];
+            document.getElementById('taskMaterial').textContent = `Материал: ${task.material}`;
+            document.getElementById('taskQuestion').textContent = task.question;
+            const taskOptions = document.getElementById('taskOptions');
+            taskOptions.innerHTML = '';
+
+            task.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.onclick = () => submitAnswer(discipline, option === task.answer);
+                taskOptions.appendChild(button);
+            });
             navigate('task');
         }
 
-        function submitAnswer(correct) {
+        function submitAnswer(discipline, correct) {
             if (correct) {
                 alert('Правильно!');
-                users[currentUser].stats.math += 10; // Пример для математики
+                const stats = users[currentUser].stats;
+                stats[discipline.toLowerCase()] = Math.min(stats[discipline.toLowerCase()] + 10, 100);
                 localStorage.setItem('users', JSON.stringify(users));
-                updateStats();
-                navigate('profile');
-            } else {
-                alert('Неправильно. Попробуйте снова.');
-            }
-        }
-    </script>
-</body>
-</html>
