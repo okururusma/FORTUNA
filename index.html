@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учебный Портал</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Главная страница -->
+    <header>
+        <h1>Учебный Портал</h1>
+        <p>Этот сайт создан для студентов нашего университета, чтобы помочь в дополнительном обучении.</p>
+        <div>
+            <button onclick="navigate('login')">Войти</button>
+            <button onclick="navigate('register')">Зарегистрироваться</button>
+        </div>
+    </header>
+
+    <!-- Страница авторизации -->
+    <section id="login" style="display: none;">
+        <h2>Вход</h2>
+        <form id="loginForm">
+            <label for="username">Имя пользователя:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">Войти</button>
+        </form>
+        <p id="loginError" style="color: red; display: none;">Неверные имя пользователя или пароль.</p>
+    </section>
+
+    <!-- Страница регистрации -->
+    <section id="register" style="display: none;">
+        <h2>Регистрация</h2>
+        <form id="registerForm">
+            <label for="regUsername">Имя пользователя:</label>
+            <input type="text" id="regUsername" name="username" required>
+
+            <label for="regPassword">Пароль:</label>
+            <input type="password" id="regPassword" name="password" required>
+
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <p id="registerError" style="color: red; display: none;">Имя пользователя уже существует.</p>
+    </section>
+
+    <!-- Личный кабинет -->
+    <section id="profile" style="display: none;">
+        <h2>Личный кабинет</h2>
+        <p>Добро пожаловать, <span id="userWelcome"></span>!</p>
+        <div id="stats">
+            <h3>Ваши успехи:</h3>
+            <p id="mathStats">Математика: 0%</p>
+            <p id="physicsStats">Физика: 0%</p>
+            <p id="chemistryStats">Химия: 0%</p>
+        </div>
+        <button onclick="navigate('menu')">Меню дисциплин</button>
+    </section>
+
+    <!-- Меню дисциплин -->
+    <section id="menu" style="display: none;">
+        <h2>Меню дисциплин</h2>
+        <ul>
+            <li onclick="selectDiscipline('Математика')">Математика</li>
+            <li onclick="selectDiscipline('Физика')">Физика</li>
+            <li onclick="selectDiscipline('Химия')">Химия</li>
+        </ul>
+    </section>
+
+    <!-- Темы и задания -->
+    <section id="topics" style="display: none;">
+        <h2 id="selectedDiscipline">Выбранная дисциплина</h2>
+        <div id="topicMenu">
+            <p>Выберите тему:</p>
+            <ul>
+                <li onclick="startTask('Легкий')">Тема 1 (Легкий)</li>
+                <li onclick="startTask('Средний')">Тема 2 (Средний)</li>
+                <li onclick="startTask('Сложный')">Тема 3 (Сложный)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Задание -->
+    <section id="task" style="display: none;">
+        <h2>Задание</h2>
+        <p id="taskDescription">Изучите материал и ответьте на вопрос:</p>
+        <p id="taskMaterial">Материал: <i>Пример учебного материала для выбранного задания.</i></p>
+        <p>Вопрос: <b>Сколько будет 2 + 2?</b></p>
+        <button onclick="submitAnswer(true)">4</button>
+        <button onclick="submitAnswer(false)">5</button>
+        <button onclick="submitAnswer(false)">3</button>
+    </section>
+
+    <script>
+        const users = JSON.parse(localStorage.getItem('users')) || {};
+        let currentUser = null;
+
+        function navigate(page) {
+            document.querySelectorAll('section, header').forEach(sec => sec.style.display = 'none');
+            document.getElementById(page).style.display = 'block';
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (users[username]) {
+                document.getElementById('registerError').style.display = 'block';
+                return;
+            }
+
+            users[username] = { password, stats: { math: 0, physics: 0, chemistry: 0 } };
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('Регистрация успешна! Теперь войдите.');
+            navigate('login');
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (users[username] && users[username].password === password) {
+                currentUser = username;
+                document.getElementById('userWelcome').textContent = username;
+                updateStats();
+                navigate('profile');
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        });
+
+        function updateStats() {
+            const stats = users[currentUser].stats;
+            document.getElementById('mathStats').textContent = `Математика: ${stats.math}%`;
+            document.getElementById('physicsStats').textContent = `Физика: ${stats.physics}%`;
+            document.getElementById('chemistryStats').textContent = `Химия: ${stats.chemistry}%`;
+        }
+
+        function selectDiscipline(name) {
+            document.getElementById('selectedDiscipline').textContent = name;
+            navigate('topics');
+        }
+
+        function startTask(difficulty) {
+            document.getElementById('taskDescription').textContent = `Вы выбрали задание уровня: ${difficulty}.`;
+            navigate('task');
+        }
+
+        function submitAnswer(correct) {
+            if (correct) {
+                alert('Правильно!');
+                users[currentUser].stats.math += 10; // Пример для математики
+                localStorage.setItem('users', JSON.stringify(users));
+                updateStats();
+                navigate('profile');
+            } else {
+                alert('Неправильно. Попробуйте снова.');
+            }
+        }
+    </script>
+</body>
+</html>
